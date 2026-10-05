@@ -1,15 +1,12 @@
 import dns from "dns";
 
 dns.setDefaultResultOrder("ipv4first");
-
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
 import dotenv from "dotenv";
-
 dotenv.config();
 
 import express, { Request, Response, NextFunction } from "express";
-
 import cors from "cors";
 
 import connectDB from "./config/db";
@@ -23,23 +20,33 @@ const PORT = Number(process.env.PORT) || 5000;
    CORS
 ========================================= */
 
-const allowedOrigins = ["http://localhost:3000", "http://localhost:3001"];
+const allowedOrigins = [
+  // Local development
+  "http://localhost:3000",
+  "http://localhost:3001",
+
+  // Vercel production
+  "https://amit-portfolio-hazel.vercel.app",
+
+  // Previous Vercel deployment
+  "https://amit-portfolio-r4t23nvud-amitgupta8s-projects.vercel.app",
+];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Postman / server-to-server
+      // Allow Postman / server-to-server requests
       if (!origin) {
-        callback(null, true);
-        return;
+        return callback(null, true);
       }
 
       if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-        return;
+        return callback(null, true);
       }
 
-      callback(new Error(`CORS blocked for origin: ${origin}`));
+      console.log("CORS blocked origin:", origin);
+
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
 
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -111,14 +118,21 @@ app.use((_req: Request, res: Response) => {
    ERROR HANDLER
 ========================================= */
 
-app.use((error: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error("Server Error:", error.message);
+app.use(
+  (
+    error: Error,
+    _req: Request,
+    res: Response,
+    _next: NextFunction,
+  ) => {
+    console.error("Server Error:", error.message);
 
-  res.status(500).json({
-    success: false,
-    message: "Internal server error.",
-  });
-});
+    res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+    });
+  },
+);
 
 /* =========================================
    START SERVER
@@ -135,13 +149,10 @@ const startServer = async (): Promise<void> => {
       console.log("====================================");
 
       console.log(`Server  : http://localhost:${PORT}`);
-
       console.log(`Health  : http://localhost:${PORT}/api/health`);
-
       console.log(`Contact : http://localhost:${PORT}/api/contact`);
 
       console.log("====================================");
-
       console.log("");
     });
   } catch (error) {
